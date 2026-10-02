@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canvas Rotate & Flip</title>
+<style>
+:root {
+color-scheme: light;
+--ink: #203b34;
+--muted: #718078;
+--paper: #f2f4ef;
+--line: #d8dfd8;
+--accent: #d96b4f;
+--accent-hover: #bc5038;
+}
+* { box-sizing: border-box; }
+body {
+margin: 0;
+min-height: 100vh;
+background-color: var(--paper);
+background-image: radial-gradient(#dce2db 0.7px, transparent 0.7px);
+background-size: 18px 18px;
+color: var(--ink);
+font-family: "Segoe UI", Tahoma, sans-serif;
+}
+main {
+width: min(900px, calc(100% - 36px));
+margin: 0 auto;
+padding: 48px 0 60px;
+}
+header { margin-bottom: 24px; }
+.eyebrow {
+margin: 0 0 8px;
+color: #a34c37;
+font-size: 12px;
+font-weight: 700;
+letter-spacing: 1.6px;
+text-transform: uppercase;
+}
+h1 {
+margin: 0;
+font-family: Georgia, "Times New Roman", serif;
+font-size: 42px;
+font-weight: 500;
+line-height: 1.1;
+}
+.subtitle {
+margin: 10px 0 0;
+color: var(--muted);
+line-height: 1.5;
+}
+.workspace {
+padding: 16px;
+border: 1px solid var(--line);
+background: #fff;
+box-shadow: 0 12px 35px rgb(32 59 52 / 7%);
+}
+.upload {
+display: flex;
+align-items: center;
+gap: 14px;
+padding-bottom: 15px;
+border-bottom: 1px solid #e7ebe6;
+}
+.upload label { font-size: 14px; font-weight: 650; }
+input[type="file"] {
+max-width: 100%;
+color: var(--muted);
+font: inherit;
+font-size: 13px;
+}
+input[type="file"]::file-selector-button {
+margin-right: 10px;
+padding: 9px 12px;
+border: 0;
+background: var(--ink);
+color: white;
+font: inherit;
+font-weight: 600;
+cursor: pointer;
+}
+.stage {
+position: relative;
+display: grid;
+place-items: center;
+min-height: 360px;
+margin-top: 16px;
+padding: 24px;
+overflow: auto;
+border: 1px solid #e0e6df;
+background-color: #f7f8f5;
+background-image: linear-gradient(45deg, #e8ece7 25%, transparent 25%), linear-gradient(-45deg, #e8ece7 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e8ece7 75%), linear-gradient(-45deg, transparent 75%, #e8ece7 75%);
+background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+background-size: 18px 18px;
+}
+canvas {
+display: none;
+width: auto;
+height: auto;
+max-width: min(420px, 100%);
+max-height: 320px;
+object-fit: contain;
+position: relative;
+z-index: 2;
+border-radius: 14px;
+box-shadow: 0 10px 24px rgba(32, 59, 52, 0.08);
+background: white;
+}
+canvas.visible {
+display: block;
+}
+.stage.has-image canvas {
+box-shadow: 0 10px 24px rgba(32, 59, 52, 0.1);
+}
+.toolbar {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: 8px;
+padding-top: 15px;
+}
+.toolbar-label {
+width: 100%;
+margin: 0 0 2px;
+color: var(--muted);
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 1.2px;
+text-transform: uppercase;
+}
+button {
+min-height: 40px;
+padding: 9px 13px;
+border: 1px solid var(--line);
+background: #fff;
+color: var(--ink);
+font: inherit;
+font-size: 13px;
+font-weight: 600;
+cursor: pointer;
+transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+button:hover {
+transform: translateY(-1px);
+border-color: var(--ink);
+background: #edf2ed;
+}
+button:disabled {
+opacity: 0.5;
+cursor: not-allowed;
+transform: none;
+}
+button.primary {
+margin-left: auto;
+border-color: var(--accent);
+background: var(--accent);
+color: #fff;
+}
+button.primary:hover {
+border-color: var(--accent-hover);
+background: var(--accent-hover);
+}
+button:focus-visible, input:focus-visible {
+outline: 3px solid #e7a18e;
+outline-offset: 3px;
+}
+.history {
+margin-top: 24px;
+}
+.history-heading {
+display: flex;
+align-items: baseline;
+justify-content: space-between;
+gap: 12px;
+margin-bottom: 12px;
+}
+.history-heading h2 {
+margin: 0;
+font-family: Georgia, "Times New Roman", serif;
+font-size: 25px;
+font-weight: 500;
+}
+.history-tools {
+display: flex;
+align-items: center;
+gap: 10px;
+}
+.history-count, .history-empty {
+color: var(--muted);
+font-size: 13px;
+}
+.history-tools button {
+min-height: 32px;
+padding: 6px 9px;
+color: #a34c37;
+font-size: 12px;
+}
+.history-list {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+gap: 12px;
+}
+.history-item {
+min-width: 0;
+padding: 10px;
+border: 1px solid var(--line);
+background: #fff;
+}
+.history-item img {
+display: block;
+width: 100%;
+height: 125px;
+object-fit: contain;
+background-color: #f7f8f5;
+background-image: linear-gradient(45deg, #e8ece7 25%, transparent 25%), linear-gradient(-45deg, #e8ece7 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e8ece7 75%), linear-gradient(-45deg, transparent 75%, #e8ece7 75%);
+background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+background-size: 16px 16px;
+}
+.history-item p {
+min-height: 36px;
+margin: 9px 0;
+font-size: 13px;
+font-weight: 650;
+}
+.history-actions {
+display: flex;
+gap: 6px;
+}
+.history-item button {
+flex: 1;
+width: 100%;
+min-height: 34px;
+padding: 6px 8px;
+font-size: 12px;
+}
+.history-item .delete-button {
+color: #a34c37;
+}
+.history-empty {
+margin: 0;
+padding: 16px;
+border: 1px dashed var(--line);
+}
+@media (max-width: 560px) {
+main { width: calc(100% - 24px); padding-top: 28px; }
+h1 { font-size: 36px; }
+.workspace { padding: 12px; }
+.upload { align-items: flex-start; flex-direction: column; gap: 8px; }
+.stage { min-height: 260px; }
+button { flex: 1 1 calc(50% - 8px); }
+button.primary { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+*, *::before, *::after { transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+<p class="eyebrow">Studio gambar</p>
+<h1>Putar &amp; balik</h1>
+<p class="subtitle">Unggah gambar, lalu pilih transformasi yang ingin diterapkan.</p>
+</header>
+<section class="workspace" aria-label="Editor gambar">
+<div class="upload">
+<label for="file1">Gambar</label>
+<input type="file" id="file1" accept=".jpg,.jpeg,.png,.bmp">
+</div>
+<div class="stage">
+<canvas id="gambar" width="300" height="300" aria-label="Area gambar"></canvas>
+</div>
+<div class="toolbar" aria-label="Kontrol transformasi">
+<p class="toolbar-label">Rotasi</p>
+<button onclick="applyTransform('Rotasi 180°', rotate180)" disabled>180°</button>
+<button onclick="applyTransform('Rotasi 270°', rotate270)" disabled>270°</button>
+<p class="toolbar-label">Balik</p>
+<button onclick="applyTransform('Flip vertikal', flipVertical)" disabled>Vertikal</button>
+<button onclick="resetImage('gambar')" disabled>Reset ke asli</button>
+<button class="primary" onclick="saveImage('gambar')" disabled>Simpan PNG</button>
+</div>
+</section>
+<section class="history" aria-labelledby="history-title">
+<div class="history-heading">
+<h2 id="history-title">Riwayat edit</h2>
+<div class="history-tools">
+<span class="history-count" id="history-count">0 gambar</span>
+<button id="clear-history" type="button" onclick="clearAllHistory()" hidden>Hapus semua</button>
+</div>
+</div>
+<div class="history-list" id="history-list" aria-live="polite">
+<p class="history-empty">Gambar asli dan hasil edit akan muncul di sini.</p>
+</div>
+</section>
+</main>
+<script>
+let historyIndex = 0;
+let hasImage = false;
+let originalImage = null;
+
+function clearHistory() {
+const historyList = document.getElementById("history-list");
+historyList.replaceChildren();
+historyIndex = 0;
+updateHistoryCount();
+}
+
+function updateHistoryCount() {
+const count = document.querySelectorAll(".history-item").length;
+document.getElementById("history-count").textContent = count + " gambar";
+document.getElementById("clear-history").hidden = count === 0;
+}
+
+function showEmptyHistory() {
+const historyList = document.getElementById("history-list");
+if (historyList.querySelector(".history-item")) return;
+const emptyMessage = document.createElement("p");
+emptyMessage.className = "history-empty";
+emptyMessage.textContent = "Gambar asli dan hasil edit akan muncul di sini.";
+historyList.append(emptyMessage);
+}
+
+function deleteHistoryItem(item) {
+item.remove();
+showEmptyHistory();
+updateHistoryCount();
+}
+
+function clearAllHistory() {
+document.getElementById("history-list").replaceChildren();
+historyIndex = 0;
+showEmptyHistory();
+updateHistoryCount();
+}
+
+function saveSnapshot(dataUrl, filename) {
+const link = document.createElement("a");
+link.download = filename;
+link.href = dataUrl;
+link.click();
+}
+
+function addHistorySnapshot(label) {
+const canvas = document.getElementById("gambar");
+const dataUrl = canvas.toDataURL("image/png");
+const historyList = document.getElementById("history-list");
+const emptyMessage = historyList.querySelector(".history-empty");
+if (emptyMessage) emptyMessage.remove();
+
+historyIndex++;
+const item = document.createElement("article");
+item.className = "history-item";
+const image = document.createElement("img");
+image.src = dataUrl;
+image.alt = label;
+const caption = document.createElement("p");
+const snapshotNumber = historyIndex;
+caption.textContent = String(snapshotNumber).padStart(2, "0") + " / " + label;
+const downloadButton = document.createElement("button");
+downloadButton.type = "button";
+downloadButton.textContent = "Unduh PNG";
+downloadButton.addEventListener("click", function () {
+saveSnapshot(dataUrl, "gambar-edit-" + String(snapshotNumber).padStart(2, "0") + ".png");
+});
+const deleteButton = document.createElement("button");
+deleteButton.type = "button";
+deleteButton.className = "delete-button";
+deleteButton.textContent = "Hapus";
+deleteButton.addEventListener("click", function () {
+deleteHistoryItem(item);
+});
+const actions = document.createElement("div");
+actions.className = "history-actions";
+actions.append(downloadButton, deleteButton);
+item.append(image, caption, actions);
+historyList.append(item);
+updateHistoryCount();
+}
+
+function applyTransform(label, transform) {
+if (!hasImage) return;
+transform("gambar");
+addHistorySnapshot(label);
+}
+
+function resetImage(canvasId) {
+if (!originalImage) return;
+const canvas = document.getElementById(canvasId);
+canvas.width = originalImage.width;
+canvas.height = originalImage.height;
+canvas.getContext("2d").drawImage(originalImage, 0, 0);
+addHistorySnapshot("Reset ke gambar asli");
+}
+
+function copyPixel(dst, di, src, si) {
+dst[di] = src[si];
+dst[di + 1] = src[si + 1];
+dst[di + 2] = src[si + 2];
+dst[di + 3] = src[si + 3];
+}
+// Load image ke canvas
+function loadImage(fileInput, canvasId) {
+const file = fileInput.files[0];
+if (!file) return;
+const canvas = document.getElementById(canvasId);
+const ctx = canvas.getContext("2d");
+const img = new Image();
+img.onload = function () {
+originalImage = img;
+canvas.width = img.width;
+canvas.height = img.height;
+canvas.classList.add("visible");
+document.querySelector(".stage").classList.add("has-image");
+ctx.drawImage(img, 0, 0);
+hasImage = true;
+clearHistory();
+addHistorySnapshot("Gambar asli");
+document.querySelectorAll(".toolbar button").forEach(function (button) {
+button.disabled = false;
+});
+};
+img.src = URL.createObjectURL(file);
+}
+// Rotasi 90 derajat
+function rotate(canvasId) {
+const canvas = document.getElementById(canvasId);
+const ctx = canvas.getContext("2d");
+const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+const width = canvas.width;
+const height = canvas.height;
+// canvas baru untuk menyimpan hasil
+const newCanvas = document.createElement("canvas");
+newCanvas.width = height;
+newCanvas.height = width;
+const newCtx = newCanvas.getContext("2d");
+const newImgData = newCtx.createImageData(height, width);
+for (let y = 0; y < height; y++) {
+for (let x = 0; x < width; x++) {
+const srcIndex = (y * width + x) * 4;
+const nx = height - 1 - y;
+const ny = x;
+const dstIndex = (ny * height + nx) * 4;
+newImgData.data[dstIndex] = imgData.data[srcIndex];
+newImgData.data[dstIndex + 1] = imgData.data[srcIndex + 1];
+newImgData.data[dstIndex + 2] = imgData.data[srcIndex + 2];
+newImgData.data[dstIndex + 3] = imgData.data[srcIndex + 3];
+}
+}
+canvas.width = newCanvas.width;
+canvas.height = newCanvas.height;
+ctx.putImageData(newImgData, 0, 0);
+}
+function rotate180(canvasId) {
+const canvas = document.getElementById(canvasId);
+const ctx = canvas.getContext("2d");
+const src = ctx.getImageData(0, 0, canvas.width, canvas.height);
+const out = ctx.createImageData(canvas.width, canvas.height);
+const width = canvas.width;
+const height = canvas.height;
+for (let y = 0; y < height; y++) {
+for (let x = 0; x < width; x++) {
+const nx = width - 1 - x;
+const ny = height - 1 - y;
+copyPixel(out.data, (ny * width + nx) * 4,
+src.data, (y * width + x) * 4);
+}
+}
+ctx.putImageData(out, 0, 0);
+}
+function rotate270(canvasId) {
+const canvas = document.getElementById(canvasId);
+const ctx = canvas.getContext("2d");
+const src = ctx.getImageData(0, 0, canvas.width, canvas.height);
+const width = canvas.width;
+const height = canvas.height;
+const temp = document.createElement("canvas");
+temp.width = height;
+temp.height = width;
+const tempCtx = temp.getContext("2d");
+const out = tempCtx.createImageData(temp.width, temp.height);
+for (let y = 0; y < height; y++) {
+for (let x = 0; x < width; x++) {
+const nx = y;
+const ny = width - 1 - x;
+copyPixel(out.data, (ny * temp.width + nx) * 4,
+src.data, (y * width + x) * 4);
+}
+}
+canvas.width = temp.width;
+canvas.height = temp.height;
+canvas.getContext("2d").putImageData(out, 0, 0);
+}
+// Flip horizontal
+function flipHorizontal(canvasId) {
+const canvas = document.getElementById(canvasId);
+const ctx = canvas.getContext("2d");
+const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+const width = canvas.width;
+const height = canvas.height;
+const newImgData = ctx.createImageData(width, height);
+for (let y = 0; y < height; y++) {
+for (let x = 0; x < width; x++) {
+const srcIndex = (y * width + x) * 4;
+const nx = width - 1 - x;
+const ny = y;
+const dstIndex = (ny * width + nx) * 4;
+newImgData.data[dstIndex] = imgData.data[srcIndex];
+newImgData.data[dstIndex + 1] = imgData.data[srcIndex + 1];
+newImgData.data[dstIndex + 2] = imgData.data[srcIndex + 2];
+newImgData.data[dstIndex + 3] = imgData.data[srcIndex + 3];
+}
+}
+ctx.putImageData(newImgData, 0, 0);
+}
+function flipVertical(canvasId) {
+const canvas = document.getElementById(canvasId);
+const ctx = canvas.getContext("2d");
+const src = ctx.getImageData(0, 0, canvas.width, canvas.height);
+const out = ctx.createImageData(canvas.width, canvas.height);
+const width = canvas.width;
+const height = canvas.height;
+for (let y = 0; y < height; y++) {
+for (let x = 0; x < width; x++) {
+const nx = x;
+const ny = height - 1 - y;
+copyPixel(out.data, (ny * width + nx) * 4,
+src.data, (y * width + x) * 4);
+}
+}
+ctx.putImageData(out, 0, 0);
+}
+// Save canvas sebagai citra
+function saveImage(canvasId) {
+if (!hasImage) return;
+const canvas = document.getElementById(canvasId);
+const link = document.createElement("a");
+link.download = canvasId + ".png";
+link.href = canvas.toDataURL();
+link.click();
+}
+// Event listener input file
+document.getElementById("file1").addEventListener("change", function () {
+loadImage(this, "gambar");
+});
+</script>
+</body>
+</html>
