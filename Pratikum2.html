@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Studio Kanal Warna</title>
+  <style>
+    :root {
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #20243a;
+      background: #f4f6fb;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background: radial-gradient(ellipse at 10% 0, #e9e7ff 0, transparent 34rem), #f4f6fb;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .page-header {
+      padding: 38px 20px 28px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 9px;
+      color: #6258d6;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      max-width: 590px;
+      margin: 12px auto 0;
+      color: #69738a;
+      line-height: 1.6;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto 48px;
+    }
+
+    .panel {
+      overflow: hidden;
+      border: 1px solid #e4e8f1;
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 16px 48px #1b274b14;
+    }
+
+    .upload-area {
+      display: grid;
+      min-height: 350px;
+      place-items: center;
+      padding: 28px;
+      background: linear-gradient(145deg, #fff, #f9faff);
+      transition: background 160ms ease;
+    }
+
+    .upload-area.is-dragging {
+      background: #eeedff;
+      outline: 3px dashed #7568e8;
+      outline-offset: -10px;
+    }
+
+    .empty-state {
+      max-width: 440px;
+      text-align: center;
+    }
+
+    .upload-icon {
+      display: grid;
+      width: 62px;
+      height: 62px;
+      margin: 0 auto 18px;
+      place-items: center;
+      border-radius: 18px;
+      background: #eeedff;
+      color: #6258d6;
+      font-size: 1.65rem;
+    }
+
+    .empty-state h2,
+    .toolbar-copy h2,
+    .results-heading h2 {
+      margin: 0;
+    }
+
+    .empty-state p {
+      margin: 9px 0 20px;
+      color: #758097;
+      line-height: 1.55;
+    }
+
+    .primary-button,
+    .model-button {
+      min-height: 42px;
+      border: 1px solid transparent;
+      border-radius: 11px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform 140ms ease, background 140ms ease, box-shadow 140ms ease;
+    }
+
+    .primary-button {
+      padding: 0 18px;
+      background: #6258d6;
+      color: #fff;
+      box-shadow: 0 6px 16px #6258d638;
+    }
+
+    .primary-button:hover,
+    .model-button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .primary-button:hover {
+      background: #5147c5;
+    }
+
+    .primary-button:focus-visible,
+    .model-button:focus-visible {
+      outline: 3px solid #aaa4fa;
+      outline-offset: 3px;
+    }
+
+    .file-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      clip-path: inset(50%);
+    }
+
+    .file-input:focus-visible + .file-name {
+      outline: 2px solid #6258d6;
+    }
+
+    .file-name {
+      min-height: 1.3em;
+      margin-top: 12px;
+      color: #68738a;
+      font-size: 0.88rem;
+      overflow-wrap: anywhere;
+    }
+
+    .preview {
+      display: none;
+      max-width: 100%;
+      max-height: min(62vh, 620px);
+      border: 1px solid #e5e9f2;
+      border-radius: 12px;
+      object-fit: contain;
+      background-color: #fff;
+      background-image: linear-gradient(45deg, #eef0f5 25%, transparent 25%),
+        linear-gradient(-45deg, #eef0f5 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #eef0f5 75%),
+        linear-gradient(-45deg, transparent 75%, #eef0f5 75%);
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+      background-size: 16px 16px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 24px;
+      border-top: 1px solid #edf0f5;
+    }
+
+    .toolbar-copy h2 {
+      font-size: 1rem;
+    }
+
+    .toolbar-copy p {
+      margin: 5px 0 0;
+      color: #7a8499;
+      font-size: 0.86rem;
+    }
+
+    .model-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .model-button {
+      padding: 0 14px;
+      border-color: #e1e5ef;
+      background: #fff;
+      color: #4f5a70;
+    }
+
+    .model-button:hover:not(:disabled) {
+      border-color: #b9b4f2;
+      background: #f7f6ff;
+    }
+
+    .model-button[aria-pressed="true"] {
+      border-color: #6258d6;
+      background: #6258d6;
+      color: #fff;
+    }
+
+    .model-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+    }
+
+    .results {
+      margin-top: 26px;
+    }
+
+    .results-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px 16px;
+      margin-bottom: 14px;
+    }
+
+    .results-heading h2 {
+      font-size: 1.2rem;
+    }
+
+    .results-heading p {
+      margin: 0;
+      color: #7a8499;
+      font-size: 0.88rem;
+    }
+
+    .channel-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+      gap: 16px;
+    }
+
+    .channel-block {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid #e5e9f2;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 8px 24px #1b274b0d;
+    }
+
+    .channel-block canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 300px;
+      object-fit: contain;
+      background-color: #fff;
+      background-image: linear-gradient(45deg, #eef0f5 25%, transparent 25%),
+        linear-gradient(-45deg, #eef0f5 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #eef0f5 75%),
+        linear-gradient(-45deg, transparent 75%, #eef0f5 75%);
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+      background-size: 16px 16px;
+    }
+
+    .channel-copy {
+      padding: 13px 15px 15px;
+      border-top: 1px solid #edf0f5;
+    }
+
+    .channel-copy h3 {
+      margin: 0;
+      font-size: 0.96rem;
+    }
+
+    .channel-copy p {
+      margin: 5px 0 0;
+      color: #7a8499;
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+
+    .status-message {
+      min-height: 1.4em;
+      margin: 12px 0 0;
+      color: #68738a;
+      font-size: 0.88rem;
+    }
+
+    .status-message[data-error="true"] {
+      color: #ba3030;
+    }
+
+    @media (max-width: 640px) {
+      .page-header {
+        padding-top: 30px;
+      }
+
+      .upload-area {
+        min-height: 300px;
+        padding: 20px;
+      }
+
+      .toolbar {
+        align-items: stretch;
+        padding: 18px;
+      }
+
+      .model-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .model-button {
+        padding: 0 9px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <p class="eyebrow">Praktikum pengolahan citra</p>
+    <h1>Studio Kanal Warna</h1>
+    <p class="subtitle">Unggah gambar untuk melihat bagaimana warna diurai dalam model RGB, CMYK, HSV, dan YIQ.</p>
+  </header>
+
+  <main>
+    <section class="panel" aria-label="Unggah dan pilih model warna">
+      <div class="upload-area" id="uploadArea">
+        <div class="empty-state" id="emptyState">
+          <div class="upload-icon" aria-hidden="true">↑</div>
+          <h2>Mulai dengan sebuah gambar</h2>
+          <p>Tarik gambar ke area ini atau pilih file dari perangkat. Mendukung JPG, PNG, BMP, dan WebP.</p>
+        </div>
+        <canvas id="gambar" class="preview" aria-label="Pratinjau gambar yang diunggah"></canvas>
+        <button class="primary-button" id="uploadButton" type="button">Pilih gambar</button>
+        <input class="file-input" type="file" id="file1" accept="image/jpeg,image/png,image/bmp,image/webp" aria-label="Pilih file gambar">
+        <div class="file-name" id="fileName" aria-live="polite"></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-copy">
+          <h2>Pilih model warna</h2>
+          <p>Hasil kanal RGB akan ditampilkan otomatis setelah gambar diunggah.</p>
+        </div>
+        <div class="model-buttons" role="group" aria-label="Model warna">
+          <button class="model-button" type="button" data-model="RGB" disabled aria-pressed="false">RGB</button>
+          <button class="model-button" type="button" data-model="CMYK" disabled aria-pressed="false">CMYK</button>
+          <button class="model-button" type="button" data-model="HSV" disabled aria-pressed="false">HSV</button>
+          <button class="model-button" type="button" data-model="YIQ" disabled aria-pressed="false">YIQ</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="results" aria-labelledby="resultsTitle">
+      <div class="results-heading">
+        <h2 id="resultsTitle">Hasil kanal</h2>
+        <p id="resultsDescription">Pilih gambar untuk memulai.</p>
+      </div>
+      <div id="channels" class="channel-container" aria-live="polite"></div>
+      <p class="status-message" id="statusMessage" role="status"></p>
+    </section>
+  </main>
+
+  <script>
+    const imageInput = document.getElementById("file1");
+    const uploadArea = document.getElementById("uploadArea");
+    const previewCanvas = document.getElementById("gambar");
+    const channelButtons = document.querySelectorAll(".model-button");
+    let currentImageUrl = null;
+    let loadRequest = 0;
+
+    function setStatus(message, isError = false) {
+      const status = document.getElementById("statusMessage");
+      status.textContent = message;
+      status.dataset.error = String(isError);
+    }
+
+    function clearChannels() {
+      document.getElementById("channels").innerHTML = "";
+    }
+
+    function loadImage(file) {
+      if (!file) return;
+
+      const extension = file.name.split(".").pop().toLowerCase();
+      const supportedExtensions = ["jpg", "jpeg", "png", "bmp", "webp"];
+      const supportedTypes = ["image/jpeg", "image/png", "image/bmp", "image/x-ms-bmp", "image/webp"];
+      if (
+        !supportedExtensions.includes(extension) ||
+        (file.type && !supportedTypes.includes(file.type))
+      ) {
+        setStatus("File bukan gambar yang didukung. Pilih JPG, PNG, BMP, atau WebP.", true);
+        return;
+      }
+
+      if (currentImageUrl) URL.revokeObjectURL(currentImageUrl);
+      const imageUrl = URL.createObjectURL(file);
+      currentImageUrl = imageUrl;
+      const request = ++loadRequest;
+      const img = new Image();
+
+      img.onload = function () {
+        if (request !== loadRequest) {
+          URL.revokeObjectURL(imageUrl);
+          return;
+        }
+
+        previewCanvas.width = img.naturalWidth;
+        previewCanvas.height = img.naturalHeight;
+        previewCanvas.getContext("2d", { willReadFrequently: true }).drawImage(img, 0, 0);
+        previewCanvas.style.display = "block";
+        document.getElementById("emptyState").style.display = "none";
+        document.getElementById("uploadButton").textContent = "Ganti gambar";
+        document.getElementById("fileName").textContent = file.name;
+        document.getElementById("resultsDescription").textContent =
+          `${img.naturalWidth} × ${img.naturalHeight} piksel`;
+        channelButtons.forEach((button) => {
+          button.disabled = false;
+          button.setAttribute("aria-pressed", "false");
+        });
+
+        URL.revokeObjectURL(imageUrl);
+        if (currentImageUrl === imageUrl) currentImageUrl = null;
+        showRGBChannels("gambar");
+      };
+
+      img.onerror = function () {
+        URL.revokeObjectURL(imageUrl);
+        if (currentImageUrl === imageUrl) currentImageUrl = null;
+        if (request === loadRequest) {
+          setStatus("Gambar tidak dapat dibuka. Coba pilih file gambar lain.", true);
+        }
+      };
+
+      img.src = imageUrl;
+    }
+
+    function createChannelCanvas(label, description, width, height, imageData) {
+      const container = document.getElementById("channels");
+      const block = document.createElement("div");
+      block.className = "channel-block";
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").putImageData(imageData, 0, 0);
+
+      const copy = document.createElement("div");
+      copy.className = "channel-copy";
+      const title = document.createElement("h3");
+      title.textContent = label;
+      const caption = document.createElement("p");
+      caption.textContent = description;
+      copy.appendChild(title);
+      copy.appendChild(caption);
+
+      block.appendChild(canvas);
+      block.appendChild(copy);
+      container.appendChild(block);
+    }
+
+    function createChannel(width, height) {
+      return new ImageData(width, height);
+    }
+
+    function setGrayscalePixel(imageData, index, value, alpha) {
+      const intensity = Math.max(0, Math.min(255, value));
+      imageData.data[index] = intensity;
+      imageData.data[index + 1] = intensity;
+      imageData.data[index + 2] = intensity;
+      imageData.data[index + 3] = alpha;
+    }
+
+    function setColorPixel(imageData, index, red, green, blue, alpha) {
+      imageData.data[index] = Math.max(0, Math.min(255, red));
+      imageData.data[index + 1] = Math.max(0, Math.min(255, green));
+      imageData.data[index + 2] = Math.max(0, Math.min(255, blue));
+      imageData.data[index + 3] = alpha;
+    }
+
+    function getSourceImageData(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      const imageData = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
+      return { canvas, imageData };
+    }
+
+    function renderChannels(model, channels) {
+      clearChannels();
+      channels.forEach(([label, description, imageData]) => {
+        createChannelCanvas(
+          label,
+          description,
+          previewCanvas.width,
+          previewCanvas.height,
+          imageData
+        );
+      });
+
+      channelButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.model === model));
+      });
+      document.getElementById("resultsDescription").textContent =
+        `${channels.length} kanal · ${previewCanvas.width} × ${previewCanvas.height} piksel`;
+      setStatus(`Visualisasi ${model} diperbarui.`);
+    }
+
+    function showRGBChannels(canvasId) {
+      const { canvas, imageData: source } = getSourceImageData(canvasId);
+      const channels = [
+        createChannel(canvas.width, canvas.height),
+        createChannel(canvas.width, canvas.height),
+        createChannel(canvas.width, canvas.height),
+      ];
+
+      for (let i = 0; i < source.data.length; i += 4) {
+        const alpha = source.data[i + 3];
+        setColorPixel(channels[0], i, source.data[i], 0, 0, alpha);
+        setColorPixel(channels[1], i, 0, source.data[i + 1], 0, alpha);
+        setColorPixel(channels[2], i, 0, 0, source.data[i + 2], alpha);
+      }
+
+      renderChannels("RGB", [
+        ["Merah (R)", "Warna merah; semakin terang, semakin tinggi intensitas R.", channels[0]],
+        ["Hijau (G)", "Warna hijau; semakin terang, semakin tinggi intensitas G.", channels[1]],
+        ["Biru (B)", "Warna biru; semakin terang, semakin tinggi intensitas B.", channels[2]],
+      ]);
+    }
+
+    function showCMYKChannels(canvasId) {
+      const { canvas, imageData: source } = getSourceImageData(canvasId);
+      const channels = [
+        createChannel(canvas.width, canvas.height),
+        createChannel(canvas.width, canvas.height),
+        createChannel(canvas.width, canvas.height),
+        createChannel(canvas.width, canvas.height),
+      ];
+
+      for (let i = 0; i < source.data.length; i += 4) {
+        const r = source.data[i] / 255;
+        const g = source.data[i + 1] / 255;
+        const b = source.data[i + 2] / 255;
+        const alpha = source.data[i + 3];
+        const k = 1 - Math.max(r, g, b);
+        const denominator = 1 - k;
+        const c = denominator === 0 ? 0 : (1 - r - k) / denominator;
+        const m = denominator === 0 ? 0 : (1 - g - k) / denominator;
+        const y = denominator === 0 ? 0 : (1 - b - k) / denominator;
+
+        setColorPixel(channels[0], i, (1 - c) * 255, 255, 255, alpha);
+        setColorPixel(channels[1], i, 255, (1 - m) * 255, 255, alpha);
+        setColorPixel(channels[2], i, 255, 255, (1 - y) * 255, alpha);
+        setGrayscalePixel(channels[3], i, (1 - k) * 255, alpha);
+      }
+
+      renderChannels("CMYK", [
+        ["Cyan (C)", "Pratinjau tinta sian di atas kertas putih.", channels[0]],
+        ["Magenta (M)", "Pratinjau tinta magenta di atas kertas putih.", channels[1]],
+        ["Yellow (Y)", "Pratinjau tinta kuning di atas kertas putih.", channels[2]],
+        ["Key / Black (K)", "Putih berarti tanpa tinta hitam; hitam berarti cakupan penuh.", channels[3]],
+      ]);
+    }
+
+    function showHSVChannels(canvasId) {
+      const { canvas, imageData: source } = getSourceImageData(canvasId);
+      const H = createChannel(canvas.width, canvas.height);
+      const S = createChannel(canvas.width, canvas.height);
+      const V = createChannel(canvas.width, canvas.height);
+
+      for (let i = 0; i < source.data.length; i += 4) {
+        const r = source.data[i] / 255;
+        const g = source.data[i + 1] / 255;
+        const b = source.data[i + 2] / 255;
+        const alpha = source.data[i + 3];
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const delta = max - min;
+        let hue = 0;
+
+        if (delta !== 0) {
+          if (max === r) hue = ((g - b) / delta) % 6;
+          else if (max === g) hue = (b - r) / delta + 2;
+          else hue = (r - g) / delta + 4;
+          hue = (hue * 60 + 360) % 360;
+        }
+
+        const saturation = max === 0 ? 0 : delta / max;
+        const hueColor = delta === 0 ? [0, 0, 0] : hsvToRgb(hue, 1, 1);
+        H.data[i] = hueColor[0];
+        H.data[i + 1] = hueColor[1];
+        H.data[i + 2] = hueColor[2];
+        H.data[i + 3] = alpha;
+        setGrayscalePixel(S, i, saturation * 255, alpha);
+        setGrayscalePixel(V, i, max * 255, alpha);
+      }
+
+      renderChannels("HSV", [
+        ["Hue (H)", "Warna palsu menunjukkan rona; piksel tanpa rona tampak hitam.", H],
+        ["Saturation (S)", "Grayscale: hitam tidak jenuh, putih jenuh penuh.", S],
+        ["Value (V)", "Grayscale menunjukkan tingkat kecerahan warna.", V],
+      ]);
+    }
+
+    function hsvToRgb(hue, saturation, value) {
+      const chroma = value * saturation;
+      const x = chroma * (1 - Math.abs((hue / 60) % 2 - 1));
+      const match = value - chroma;
+      let r, g, b;
+
+      if (hue < 60) [r, g, b] = [chroma, x, 0];
+      else if (hue < 120) [r, g, b] = [x, chroma, 0];
+      else if (hue < 180) [r, g, b] = [0, chroma, x];
+      else if (hue < 240) [r, g, b] = [0, x, chroma];
+      else if (hue < 300) [r, g, b] = [x, 0, chroma];
+      else [r, g, b] = [chroma, 0, x];
+
+      return [(r + match) * 255, (g + match) * 255, (b + match) * 255];
+    }
+
+    function showYIQChannels(canvasId) {
+      const { canvas, imageData: source } = getSourceImageData(canvasId);
+      const Y = createChannel(canvas.width, canvas.height);
+      const I = createChannel(canvas.width, canvas.height);
+      const Q = createChannel(canvas.width, canvas.height);
+
+      for (let i = 0; i < source.data.length; i += 4) {
+        const r = source.data[i] / 255;
+        const g = source.data[i + 1] / 255;
+        const b = source.data[i + 2] / 255;
+        const alpha = source.data[i + 3];
+        const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+        const inPhase = 0.596 * r - 0.274 * g - 0.322 * b;
+        const quadrature = 0.211 * r - 0.523 * g + 0.312 * b;
+
+        setGrayscalePixel(Y, i, luminance * 255, alpha);
+        setGrayscalePixel(I, i, ((inPhase / 0.596 + 1) / 2) * 255, alpha);
+        setGrayscalePixel(Q, i, ((quadrature / 0.523 + 1) / 2) * 255, alpha);
+      }
+
+      renderChannels("YIQ", [
+        ["Luminance (Y)", "Kecerahan gambar; hitam gelap, putih terang.", Y],
+        ["In-phase (I)", "Krominans I dinormalisasi; abu-abu tengah mendekati nol.", I],
+        ["Quadrature (Q)", "Krominans Q dinormalisasi; abu-abu tengah mendekati nol.", Q],
+      ]);
+    }
+
+    document.getElementById("uploadButton").addEventListener("click", function () {
+      imageInput.click();
+    });
+
+    imageInput.addEventListener("change", function () {
+      loadImage(this.files[0]);
+      this.value = "";
+    });
+
+    channelButtons.forEach((button) => {
+      button.addEventListener("click", function () {
+        const renderers = {
+          RGB: showRGBChannels,
+          CMYK: showCMYKChannels,
+          HSV: showHSVChannels,
+          YIQ: showYIQChannels,
+        };
+        renderers[this.dataset.model]("gambar");
+      });
+    });
+
+    uploadArea.addEventListener("dragover", function (event) {
+      event.preventDefault();
+      uploadArea.classList.add("is-dragging");
+    });
+
+    uploadArea.addEventListener("dragleave", function (event) {
+      if (!uploadArea.contains(event.relatedTarget)) {
+        uploadArea.classList.remove("is-dragging");
+      }
+    });
+
+    uploadArea.addEventListener("drop", function (event) {
+      event.preventDefault();
+      uploadArea.classList.remove("is-dragging");
+      loadImage(event.dataTransfer.files[0]);
+    });
+  </script>
+</body>
+</html>
